@@ -13,13 +13,13 @@ namespace SuperHeroes.Controllers
         private static List<SuperHero> heroes = new List<SuperHero>
         {
             //Povoando a lista da classe SuperHero
-            new SuperHero{
-                Id = 1,
-                Name = "Batman",
-                FirstName = "Bruce",
-                LastName = "Wayne",
-                Place = "Gotham"
-            },
+            //new SuperHero{
+            //    Id = 1,
+            //    Name = "Batman",
+            //    FirstName = "Bruce",
+            //    LastName = "Wayne",
+            //    Place = "Gotham"
+            //},
             new SuperHero{
                 Id = 2,
                 Name = "SuperMan",
@@ -28,6 +28,12 @@ namespace SuperHeroes.Controllers
                 Place = "Kripton"
             }
         };
+        private readonly DataContext context;
+
+        public SuperHeroController(DataContext context)
+        {
+            this.context = context;
+        }
 
         //Identifica uma ação que suporta o método GET
         [HttpGet]
@@ -35,7 +41,7 @@ namespace SuperHeroes.Controllers
         public async Task<ActionResult<List<SuperHero>>> Get()
         {
             //status de retorno que sera produzido
-            return Ok(heroes);
+            return Ok(await context.SuperHeroes.ToListAsync());
         }
 
         //Metodo GET para um unico heroi
@@ -44,9 +50,13 @@ namespace SuperHeroes.Controllers
         //Mesma base do GET anterior, só que sem a lista dessa vez, pois deve retornar apenar um heroi
         public async Task<ActionResult<SuperHero>> Get(int id) 
         {
+            var hero = await context.SuperHeroes.FindAsync(id);
+
             // Usando lambda para encontrar o heroi de acordo com o id
-            var hero = heroes.Find(h => h.Id == id);
-           // Tratando parametros nulos.
+           // var hero = heroes.Find(h => h.Id == id);
+           
+            
+            // Tratando parametros nulos.
             if (hero == null)
                 return BadRequest("Heroi não encontrado.");
             return Ok(hero);
@@ -56,34 +66,40 @@ namespace SuperHeroes.Controllers
         [HttpPost]
         public async Task<ActionResult<List<SuperHero>>> AddHero(SuperHero hero)
         {
-            heroes.Add(hero);
-            return Ok(heroes);
+            
+            context.SuperHeroes.Add(hero);
+            await context.SaveChangesAsync();
+            return Ok(context.SuperHeroes.ToListAsync());
         }
 
         [HttpPut]
         public async Task<ActionResult<List<SuperHero>>> UpdateHero(SuperHero request)
         {
-            var hero = heroes.Find(h => h.Id == request.Id);
-            if (hero == null)
+            var DbHero = await context.SuperHeroes.FindAsync(request.Id);
+            //var hero = heroes.Find(h => h.Id == request.Id);
+            if (DbHero == null)
                 return BadRequest("Heroi nao encontrado");
             
-            hero.Name = request.Name;
-            hero.FirstName = request.FirstName;
-            hero.LastName = request.LastName;
-            hero.Place = request.Place;
+            DbHero.Name = request.Name;
+            DbHero.FirstName = request.FirstName;
+            DbHero.LastName = request.LastName;
+            DbHero.Place = request.Place;
 
-            return Ok(heroes);
+            await context.SaveChangesAsync();
+            return Ok(await context.SuperHeroes.ToListAsync());
         
         }
 
         [HttpDelete("{id}")]
         public async Task<ActionResult<List<SuperHero>>> DeleteHero(int id) 
         {
-            var hero = heroes.Find(h => h.Id == id);
+            var hero = await context.SuperHeroes.FindAsync(id);
+            //var hero = heroes.Find(h => h.Id == id);
             if (hero == null)
                 return BadRequest("Heroi não encontrado.");
-            heroes.Remove(hero);
-            return Ok(heroes);
+            context.SuperHeroes.Remove(hero);
+            await context.SaveChangesAsync();
+            return Ok(await context.SuperHeroes.ToListAsync());
         }
     }
 }
